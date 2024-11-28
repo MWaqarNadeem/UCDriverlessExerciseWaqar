@@ -1,0 +1,172 @@
+Create a ros2 workspace and place the exercise files in it.
+waqar@waqar-virtual-machine:~$ mkdir -p ~/ros2_ws/src
+waqar@waqar-virtual-machine:~$ cd ~/ros2_ws
+After that, moved the rosbag2_2024_11_22-00_31_31 folder to ~/ros2_ws, and 'sysmonitor_interfaces' folder to ~/ros2_ws/src
+The directory look like this,
+.
+├── rosbag2_2024_11_22-00_32_31
+│   ├── metadata.yaml
+│   └── rosbag2_2024_11_22-00_32_31_0.mcap
+└── src
+    └── sysmonitor_interfaces
+        ├── CMakeLists.txt
+        ├── msg
+        │   └── Sysmon.msg
+        └── package.xml
+
+In the root workspace (i.e. ~/ros2_ws), used the following command
+colcon build
+
+And then source it using,
+source install/setup.bash
+
+
+
+Determine how many topics are in the bag.
+Used the following command
+waqar@waqar-virtual-machine:~/ros2_ws$ ros2 bag info rosbag2_2024_11_22-00_32_31/
+
+Which gave the following output
+waqar@waqar-virtual-machine:~/ros2_ws$ ros2 bag info rosbag2_2024_11_22-00_32_31/
+Files:             rosbag2_2024_11_22-00_32_31_0.mcap
+Bag size:          68.7 MiB
+Storage id:        mcap
+Duration:          10.626805833s
+Start:             Nov 22 2024 00:32:31.698013076 (1732231951.698013076)
+End:               Nov 22 2024 00:32:42.324818909 (1732231962.324818909)
+Messages:          1246
+Topic information: Topic: /imu/acceleration | Type: geometry_msgs/msg/Vector3Stamped | Count: 0 | Serialization Format: cdr
+                   Topic: /imu/angular_velocity | Type: geometry_msgs/msg/Vector3Stamped | Count: 0 | Serialization Format: cdr
+                   Topic: /imu/data | Type: sensor_msgs/msg/Imu | Count: 916 | Serialization Format: cdr
+                   Topic: /zed2i/zed_node/left_gray/image_rect_gray | Type: sensor_msgs/msg/Image | Count: 311 | Serialization Format: cdr
+                   Topic: /system_info | Type: sysmonitor_interfaces/msg/Sysmon | Count: 19 | Serialization Format: cdr
+
+Alternatively, we can also use the follwoing command when the bag is playing
+waqar@waqar-virtual-machine:~/ros2_ws$ ros2 topic list -or- ros2 topic list -t (with types),
+
+Which gave the following output
+/events/read_split [rosbag2_interfaces/msg/ReadSplitEvent]
+/imu/acceleration [geometry_msgs/msg/Vector3Stamped]
+/imu/angular_velocity [geometry_msgs/msg/Vector3Stamped]
+/imu/data [sensor_msgs/msg/Imu]
+/parameter_events [rcl_interfaces/msg/ParameterEvent]
+/rosout [rcl_interfaces/msg/Log]
+/system_info [sysmonitor_interfaces/msg/Sysmon]
+/zed2i/zed_node/left_gray/image_rect_gray [sensor_msgs/msg/Image]
+
+
+
+Determine the Hz of the topic image.
+Execute the following command to play the bag:
+waqar@waqar-virtual-machine:~/ros2_ws$ ros2 bag play rosbag2_2024_11_22-00_32_31/ --loop  (this command play the bag in loop)
+
+Now, in another terminal, run the following command (don't forget to source in new terminal e.g. source /install/setup.bash)
+waqar@waqar-virtual-machine:~/ros2_ws$ ros2 topic hz /zed2i/zed_node/left_gray/image_rect_gray
+
+Which gave the following output
+verage rate: 29.248
+	min: 0.029s max: 0.039s std dev: 0.00208s window: 31
+average rate: 29.310
+	min: 0.029s max: 0.040s std dev: 0.00201s window: 61
+average rate: 29.341
+	min: 0.028s max: 0.040s std dev: 0.00233s window: 91
+average rate: 29.306
+	min: 0.027s max: 0.041s std dev: 0.00250s window: 121
+average rate: 29.287
+	min: 0.026s max: 0.044s std dev: 0.00275s window: 151
+
+Hence, the hz for image is around 29.3
+
+
+
+Determine the Hz of the topic system.
+While the bag is playing, use the following command
+waqar@waqar-virtual-machine:~/ros2_ws$ ros2 topic hz /system_info
+
+Which gave the following o/p
+average rate: 2.000
+	min: 0.499s max: 0.501s std dev: 0.00053s window: 16
+average rate: 1.731
+	min: 0.499s max: 1.898s std dev: 0.32034s window: 18
+average rate: 1.806
+	min: 0.232s max: 1.898s std dev: 0.30601s window: 21
+
+Hence, the hz for system is around 1.8
+
+
+
+Determine what does the topic system return.
+waqar@waqar-virtual-machine:~/ros2_ws$ ros2 topic info /system_info
+Type: sysmonitor_interfaces/msg/Sysmon
+Publisher count: 1
+Subscription count: 0
+
+waqar@waqar-virtual-machine:~/ros2_ws$ ros2 topic echo /system_info 
+cpu_usage: 19.0
+cpu_temp: 56.56
+ram_usage: 9.7
+gpu_usage: 48.8
+gpu_temp: 51.62
+gpuram_usage: 1181.0
+---
+cpu_usage: 15.4
+cpu_temp: 56.25
+ram_usage: 9.7
+gpu_usage: 59.8
+gpu_temp: 51.22
+gpuram_usage: 1181.0
+---
+cpu_usage: 19.0
+cpu_temp: 56.31
+ram_usage: 9.7
+gpu_usage: 42.0
+gpu_temp: 51.56
+gpuram_usage: 1181.0
+
+
+
+Create a node that publishes a message of type std_msgs float64 on topic /test every time the system publishes a piece of data.
+waqar@waqar-virtual-machine:~/ros2_ws$ cd ~/ros2_ws/src
+waqar@waqar-virtual-machine:~/ros2_ws/src$ ros2 pkg create --build-type ament_python system_monitor
+waqar@waqar-virtual-machine:~/ros2_ws/src$ cd system_monitor/system_monitor/
+waqar@waqar-virtual-machine:~/ros2_ws/src$ touch system_publisher.py
+
+Then open this file in VSCode and copy the code from this repo
+
+After that modify the setup.py file. Add the follwoing line inside entry_points.
+        'system_publisher = system_monitor.system_publisher:main'
+
+Then build and source (in the root directory)
+waqar@waqar-virtual-machine:~/ros2_ws/src$ cd ~/ros2_ws
+waqar@waqar-virtual-machine:~/ros2_ws/src$ colcon build
+waqar@waqar-virtual-machine:~/ros2_ws/src$ source install/setup.bash
+
+
+Now run the bag in one terminal and the system_publisher in another terminal (don't forget to source in bothe terminal)
+First terminal
+waqar@waqar-virtual-machine:~/ros2_ws$ ros2 bag play rosbag2_2024_11_22-00_32_31/ --loop
+[INFO] [1732809751.551195004] [rosbag2_player]: Set rate to 1
+[INFO] [1732809751.560761796] [rosbag2_player]: Adding keyboard callbacks.
+[INFO] [1732809751.560877119] [rosbag2_player]: Press SPACE for Pause/Resume
+[INFO] [1732809751.560888574] [rosbag2_player]: Press CURSOR_RIGHT for Play Next Message
+[INFO] [1732809751.560896335] [rosbag2_player]: Press CURSOR_UP for Increase Rate 10%
+[INFO] [1732809751.560906963] [rosbag2_player]: Press CURSOR_DOWN for Decrease Rate 10%
+
+Second terminal
+waqar@waqar-virtual-machine:~/ros2_ws$ ros2 run system_monitor system_publisher 
+[INFO] [1732809763.666882901] [system_publisher]: Publishing: "15.4" on /test
+[INFO] [1732809763.888699017] [system_publisher]: Publishing: "18.9" on /test
+[INFO] [1732809764.388652104] [system_publisher]: Publishing: "15.4" on /test
+[INFO] [1732809764.888657621] [system_publisher]: Publishing: "18.9" on /test
+[INFO] [1732809765.388873791] [system_publisher]: Publishing: "15.4" on /test
+[INFO] [1732809765.888368482] [system_publisher]: Publishing: "18.9" on /test
+[INFO] [1732809766.388310753] [system_publisher]: Publishing: "15.4" on /test
+[INFO] [1732809766.888751565] [system_publisher]: Publishing: "19.0" on /test
+[INFO] [1732809767.388507941] [system_publisher]: Publishing: "15.4" on /test
+[INFO] [1732809767.888701466] [system_publisher]: Publishing: "19.0" on /test
+
+
+
+
+
+
