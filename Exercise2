@@ -34,7 +34,7 @@ Call Stack (most recent call first):
   CMakeLists.txt:21 (ament_target_dependencies)
 
 The error indicates that to build the 'fault_detection' package, the 'sysmonitor_interfaces' is missing. (First, I tried to build only sysmonitor_interfaces package using the command: 'colcon build --select-packages sysmonitor_interfaces', but the error still exists)
-Hence, we need to include the 'sysmonitor_interfaces' package. To do this, write the following line in ~ros2_ws2/src/fault_detection/CMakeLists.txt in the find dependencies section
+Hence, we need to include the 'sysmonitor_interfaces' package. To do this, write the following line in the file '~/ros2_ws2/src/fault_detection/CMakeLists.txt' inside find dependencies section
 find_package(sysmonitor_interfaces REQUIRED)
 
 Now, run the build command again i.e. 'colcon build'. This time the errors are:
@@ -72,6 +72,12 @@ For the line 12 & 13, the constructor initializtion is wrong. Hence, make a conn
 MinimalSubscriber():
       Node("minimal_subscriber")
 
-Now build the packages.
+Now build the packages ('colcon build') and source every terminal that we open ('source install/setup.bash)
 
+Now run the 'challenge2' node in another terminal using the command:
+ros2 run fault_detection challenge2
 
+The node stops when the temperature goes above some range. Now to find that range, publish some values to the topic 'fault_detection' with the following command:
+ros2 topic pub /Orin_telemetry sysmonitor_interfaces/msg/Sysmon "{cpu_usage: 90.0, cpu_temp: 90.0, ram_usage: 70.0, gpu_usage: 80.0, gpu_temp: 90.0}"
+
+It has been observed that the node stops when the cpu_temp >= 90. 
