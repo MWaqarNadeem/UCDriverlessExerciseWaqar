@@ -1,0 +1,77 @@
+Copy the given files into the workspace. The tree structure should look like this.
+waqar@waqar-virtual-machine:~/ros2_ws2$ tree -a
+.
+├── rosbag2_2024_11_27-15_00_23
+│   ├── metadata.yaml
+│   └── rosbag2_2024_11_27-15_00_23_0.db3
+└── src
+    ├── fault_detection
+    │   ├── CMakeLists.txt
+    │   ├── include
+    │   │   └── fault_detection
+    │   │       └── magiclib.h
+    │   ├── lib
+    │   │   ├── libmagicLib.a
+    │   │   └── magiclib.o
+    │   ├── LICENSE
+    │   ├── package.xml
+    │   └── src
+    │       └── main.cpp
+    └── sysmonitor_interfaces
+        ├── CMakeLists.txt
+        ├── msg
+        │   └── Sysmon.msg
+        └── package.xml
+
+9 directories, 12 files
+
+
+On running the build command, it gives the following error:
+CMake Error at /opt/ros/humble/share/ament_cmake_target_dependencies/cmake/ament_target_dependencies.cmake:77 (message):
+  ament_target_dependencies() the passed package name 'sysmonitor_interfaces'
+  was not found before
+Call Stack (most recent call first):
+  CMakeLists.txt:21 (ament_target_dependencies)
+
+The error indicates that to build the 'fault_detection' package, the 'sysmonitor_interfaces' is missing. (First, I tried to build only sysmonitor_interfaces package using the command: 'colcon build --select-packages sysmonitor_interfaces', but the error still exists)
+Hence, we need to include the 'sysmonitor_interfaces' package. To do this, write the following line in ~ros2_ws2/src/fault_detection/CMakeLists.txt in the find dependencies section
+find_package(sysmonitor_interfaces REQUIRED)
+
+Now, run the build command again i.e. 'colcon build'. This time the errors are:
+/home/waqar/ros2_ws2/src/fault_detection/src/main.cpp:7:28: error: expected ‘;’ before ‘class’
+    7 | using std::placeholders::_1
+      |                            ^
+      |                            ;
+    8 | 
+    9 | class MinimalSubscriber : public rclcpp::Node
+      | ~~~~~                       
+/home/waqar/ros2_ws2/src/fault_detection/src/main.cpp:12:23: error: expected ‘;’ at end of member declaration
+   12 |     MinimalSubscriber()
+      |                       ^
+      |                        ;
+/home/waqar/ros2_ws2/src/fault_detection/src/main.cpp:13:11: error: expected unqualified-id before string constant
+   13 |      Node("minimal_subscriber")
+      |           ^~~~~~~~~~~~~~~~~~~~
+/home/waqar/ros2_ws2/src/fault_detection/src/main.cpp:13:11: error: expected ‘)’ before string constant
+   13 |      Node("minimal_subscriber")
+      |          ~^~~~~~~~~~~~~~~~~~~~
+      |           )
+gmake[2]: *** [CMakeFiles/challenge2.dir/build.make:76: CMakeFiles/challenge2.dir/src/main.cpp.o] Error 1
+gmake[1]: *** [CMakeFiles/Makefile2:137: CMakeFiles/challenge2.dir/all] Error 2
+gmake: *** [Makefile:146: all] Error 2
+---
+Failed   <<< fault_detection [4.96s, exited with code 2]
+
+Summary: 1 package finished [6.89s]
+  1 package failed: fault_detection
+  1 package had stderr output: fault_detection
+
+
+Hence, at line 7, we need to add the termination i.e. ';'
+For the line 12 & 13, the constructor initializtion is wrong. Hence, make a connection for the node by writing colon (':') as shown below
+MinimalSubscriber():
+      Node("minimal_subscriber")
+
+Now build the packages.
+
+
